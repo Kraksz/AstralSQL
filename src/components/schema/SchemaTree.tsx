@@ -6,16 +6,23 @@ import {
   KeyRound,
   Link2,
   Table2,
+  Trash2,
 } from "lucide-react";
 import type { TableInfo } from "../../lib/types";
 
 export interface SchemaTreeProps {
   tables: TableInfo[];
   onSelect: (table: TableInfo) => void;
+  onDrop?: (table: TableInfo) => void;
   filter?: string;
 }
 
-export function SchemaTree({ tables, onSelect, filter = "" }: SchemaTreeProps) {
+export function SchemaTree({
+  tables,
+  onSelect,
+  onDrop,
+  filter = "",
+}: SchemaTreeProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [selected, setSelected] = useState<string>("users");
   const search = filter.trim().toLowerCase();
@@ -77,6 +84,16 @@ export function SchemaTree({ tables, onSelect, filter = "" }: SchemaTreeProps) {
                   {table.columns.length}
                 </span>
               </button>
+              {onDrop && (
+                <button
+                  className="schema-drop"
+                  aria-label={`Drop ${table.name}`}
+                  title={`Drop ${table.name}`}
+                  onClick={() => onDrop(table)}
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
             </div>
             {isOpen && (
               <ul

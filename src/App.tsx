@@ -51,6 +51,7 @@ import AstralWaveCanvas from "./components/canvas/AstralWaveCanvas";
 import PageLoader from "./components/intro/PageLoader";
 import SqlImportDialog from "./components/editor/SqlImportDialog";
 import WorkspaceContextMenu from "./components/layout/WorkspaceContextMenu";
+import { useDatabaseTools } from "./components/database/useDatabaseTools";
 import { validateScriptText, MAX_SCRIPT_BYTES } from "./lib/sqlScript";
 import {
   initializeDemo,
@@ -626,6 +627,17 @@ export default function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [execute, current, saved, showGuide, showConnect, showPalette]);
+  const tools = useDatabaseTools({
+    connection,
+    busyRef,
+    blocked: loading || running,
+    refreshSchema: async (target) => {
+      const schema = await getSchema(target);
+      if (connectionRef.current === target) setTables(schema);
+    },
+    onToast: setToast,
+    onError: setError,
+  });
   const actions: PaletteAction[] = [
     {
       id: "guide",
@@ -668,6 +680,32 @@ export default function App() {
       run: saveQuery,
     },
     { id: "format", label: "Format SQL", run: formatQuery },
+    ...(tools.canDump
+      ? [
+          {
+            id: "export-database",
+            label: "Export database",
+            detail: "Every table and row in one .sql file",
+            run: tools.openExport,
+          },
+          {
+            id: "import-database",
+            label: "Import database dump",
+            detail: "Run a .sql dump statement by statement",
+            run: () => void tools.openImport(),
+          },
+        ]
+      : []),
+    ...(tools.canDrop && tables.length
+      ? [
+          {
+            id: "drop-all-tables",
+            label: "Drop all tables",
+            detail: connection?.name,
+            run: tools.openDropAll,
+          },
+        ]
+      : []),
     ...tables.map((t) => ({
       id: `table-${t.name}`,
       label: `Open ${t.name}`,
@@ -726,6 +764,12 @@ export default function App() {
           savedCount={saved.length}
           onImport={openSQLite}
           onImportSql={openSql}
+          canDrop={tools.canDrop}
+          canDump={tools.canDump}
+          onDropTable={tools.openDrop}
+          onDropAll={tools.openDropAll}
+          onExportDatabase={tools.openExport}
+          onImportDatabase={() => void tools.openImport()}
         />
         <main className="workspace">
           <div className="workspace-heading">
@@ -1411,6 +1455,7 @@ export default function App() {
           onCancel={() => void cancelQuery(queryId.current)}
         />
       )}
+      {tools.dialogs}
       {showConnect && (
         <ConnectionDialog
           onHelp={() => setShowGuide(true)}

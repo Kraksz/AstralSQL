@@ -1,6 +1,9 @@
 import type {
   ConnectionConfig,
   ConnectionInfo,
+  DumpFile,
+  DumpProgress,
+  DumpSummary,
   QueryResult,
   TableInfo,
 } from "../../lib/types";
@@ -233,6 +236,42 @@ export async function importSQLite(file: File): Promise<ConnectionInfo> {
   });
   connections.set(result.id, result);
   return result;
+}
+
+function requireDesktop(): void {
+  if (!isDesktop)
+    throw new Error("Database export and import run in the desktop app.");
+}
+
+/** Opens a save dialog, then streams the whole database into that file. */
+export async function exportDatabase(
+  connectionId: string,
+  fileName: string,
+  queryId: string,
+): Promise<DumpSummary | null> {
+  requireDesktop();
+  return invoke("export_database", { connectionId, fileName, queryId });
+}
+
+export async function pickDatabaseDump(): Promise<DumpFile | null> {
+  requireDesktop();
+  return invoke("pick_database_dump", {});
+}
+
+export async function importDatabase(
+  connectionId: string,
+  path: string,
+  queryId: string,
+): Promise<DumpSummary> {
+  requireDesktop();
+  return invoke("import_database", { connectionId, path, queryId });
+}
+
+export async function dumpProgress(
+  queryId: string,
+): Promise<DumpProgress | null> {
+  if (!isDesktop) return null;
+  return invoke("dump_progress", { queryId });
 }
 
 export async function downloadDatabase(connectionId: string): Promise<void> {

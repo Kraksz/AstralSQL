@@ -29,7 +29,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision"] }
 sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "sqlite", "postgres", "mysql", "chrono", "uuid", "json", "bigdecimal"] }
 sqlparser = { version = "0.62", default-features = false, features = ["std"] }
-tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "fs", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 futures-util = "0.3"
 chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }

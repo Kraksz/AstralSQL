@@ -2,6 +2,7 @@ import {
   ArrowDownToLine,
   ChevronDown,
   Database,
+  Download,
   FolderCode,
   HardDrive,
   History,
@@ -10,6 +11,8 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import { SchemaTree } from "../schema/SchemaTree";
 import {
@@ -32,6 +35,12 @@ export function Sidebar({
   savedCount,
   onImport,
   onImportSql,
+  canDrop,
+  canDump,
+  onDropTable,
+  onDropAll,
+  onExportDatabase,
+  onImportDatabase,
 }: {
   connections: ConnectionInfo[];
   activeConnection: string;
@@ -46,6 +55,12 @@ export function Sidebar({
   savedCount: number;
   onImport: () => void;
   onImportSql: () => void;
+  canDrop: boolean;
+  canDump: boolean;
+  onDropTable: (table: TableInfo) => void;
+  onDropAll: () => void;
+  onExportDatabase: () => void;
+  onImportDatabase: () => void;
 }) {
   return (
     <aside className="sidebar">
@@ -140,9 +155,45 @@ export function Sidebar({
         <FolderCode size={14} />
         <span>{tables[0]?.schema || "main"}</span>
         <small>{tables.length} tables</small>
+        <div className="schema-heading-actions">
+          {canDump && (
+            <>
+              <button
+                onClick={onExportDatabase}
+                title="Export the whole database to one .sql file"
+                aria-label="Export database"
+              >
+                <Download size={13} />
+              </button>
+              <button
+                onClick={onImportDatabase}
+                title="Import a .sql database dump"
+                aria-label="Import database"
+              >
+                <Upload size={13} />
+              </button>
+            </>
+          )}
+          {canDrop && (
+            <button
+              className="is-danger"
+              onClick={onDropAll}
+              disabled={!tables.length}
+              title="Drop all tables"
+              aria-label="Drop all tables"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+        </div>
       </div>
       <div className="schema-container">
-        <SchemaTree tables={tables} filter={search} onSelect={onTable} />
+        <SchemaTree
+          tables={tables}
+          filter={search}
+          onSelect={onTable}
+          onDrop={canDrop ? onDropTable : undefined}
+        />
       </div>
       <button className="import-button" onClick={onImport}>
         <ArrowDownToLine size={15} />

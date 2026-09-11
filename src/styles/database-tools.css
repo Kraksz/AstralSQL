@@ -1,0 +1,131 @@
+/* Database tools: sidebar actions, drop confirmation and dump progress. */
+.schema-heading-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: 6px;
+}
+.schema-heading-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: #618aa6;
+}
+.schema-heading-actions button:hover:not(:disabled) {
+  background: #132133;
+  color: #bae6fd;
+}
+.schema-heading-actions button.is-danger:hover:not(:disabled) {
+  background: #2e201f;
+  color: #f2b9a8;
+}
+.schema-heading-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.schema-tree .schema-drop {
+  width: 26px;
+  min-width: 26px;
+  padding: 6px;
+  justify-content: center;
+  opacity: 0;
+}
+.schema-table-row:hover .schema-drop,
+.schema-table-row:focus-within .schema-drop,
+.schema-table-row.is-active .schema-drop {
+  opacity: 1;
+}
+.schema-tree .schema-drop:hover {
+  background: #2e201f;
+}
+.schema-tree .schema-drop:hover svg {
+  color: #f2b9a8;
+}
+@media (hover: none) {
+  .schema-tree .schema-drop {
+    opacity: 1;
+  }
+}
+.danger-dialog {
+  border-color: #744944;
+}
+.danger-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #f2b9a8;
+}
+.danger-confirm {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 4px;
+  color: #a0b5c7;
+  font-size: 12px;
+}
+.danger-confirm code {
+  font-family: var(--mono);
+  color: #f2b9a8;
+  background: #2e201f;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.danger-confirm input {
+  padding: 10px 12px;
+  border: 1px solid #2b4b62;
+  border-radius: 7px;
+  background: #050d16;
+  color: #e5f1fa;
+  font: 12px var(--mono);
+}
+.danger-confirm input:focus {
+  outline: none;
+  border-color: #b0645a;
+}
+.sql-import-dialog .danger-button {
+  background: #b0463a;
+  border: 1px solid #c9594c;
+  color: #fff5f2;
+  font-weight: 600;
+}
+.sql-import-dialog .danger-button:hover:not(:disabled) {
+  background: #c4503f;
+}
+.sql-import-dialog footer button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.sql-import-dialog .dialog-error {
+  margin: 14px 0 0;
+  max-height: 30vh;
+  padding: 12px 14px;
+  border: 1px solid #744944;
+  background: #2e201f;
+  color: #f2b9a8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.dump-progress {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 4px;
+}
+.dump-progress-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: #10283a;
+  overflow: hidden;
+}
+.dump-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #93dafa;
+  transition: width 0.3s ease;
+}
+.dump-progress small {
+  color: #a0b5c7;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}

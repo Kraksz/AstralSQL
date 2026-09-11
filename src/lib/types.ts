@@ -56,6 +56,28 @@ export interface QueryHistoryEntry {
   error?: string;
 }
 
+export interface DumpFile {
+  path: string;
+  name: string;
+  bytes: number;
+  preview: string;
+}
+
+export interface DumpProgress {
+  done: number;
+  total: number;
+  label: string;
+}
+
+export interface DumpSummary {
+  tables: number;
+  rows: number;
+  statements: number;
+  bytes: number;
+  elapsedMs: number;
+  path: string;
+}
+
 export const DEFAULT_QUERY = `-- Your data. Your machine. Your universe.
 SELECT
   id,

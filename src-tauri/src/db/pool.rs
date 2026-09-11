@@ -78,6 +78,19 @@ pub struct DatabaseState {
     active: Arc<Mutex<HashMap<String, ActiveQuery>>>,
     // Serialize connection establishment and removal to prevent id races.
     connection_changes: tokio::sync::Mutex<()>,
+    progress: Arc<Mutex<HashMap<String, super::dump::DumpProgress>>>,
+}
+
+struct ProgressEntry {
+    id: String,
+    progress: Arc<Mutex<HashMap<String, super::dump::DumpProgress>>>,
+}
+impl Drop for ProgressEntry {
+    fn drop(&mut self) {
+        if let Ok(mut progress) = self.progress.lock() {
+            progress.remove(&self.id);
+        }
+    }
 }
 
 struct QueryRegistration {
@@ -286,6 +299,81 @@ impl DatabaseState {
         query_id: &str,
         script: bool,
     ) -> DbResult<QueryResult> {
+        self.operation(connection_id, query_id, |pool, cancel| async move {
+            if script {
+                super::script::execute(&pool, sql, cancel).await
+            } else {
+                pool.execute(sql, max_rows, cancel).await
+            }
+        })
+        .await
+    }
+
+    pub async fn export_dump(
+        &self,
+        connection_id: &str,
+        query_id: &str,
+        path: std::path::PathBuf,
+    ) -> DbResult<super::dump::DumpSummary> {
+        let (_entry, report) = self.track_progress(query_id);
+        self.operation(connection_id, query_id, |pool, cancel| async move {
+            super::dump::export(&pool, &path, &cancel, &report).await
+        })
+        .await
+    }
+
+    pub async fn import_dump(
+        &self,
+        connection_id: &str,
+        query_id: &str,
+        path: std::path::PathBuf,
+    ) -> DbResult<super::dump::DumpSummary> {
+        let (_entry, report) = self.track_progress(query_id);
+        self.operation(connection_id, query_id, |pool, cancel| async move {
+            super::dump::import(&pool, &path, &cancel, &report).await
+        })
+        .await
+    }
+
+    pub fn dump_progress(&self, query_id: &str) -> Option<super::dump::DumpProgress> {
+        self.progress.lock().ok()?.get(query_id).cloned()
+    }
+
+    /// Publishes a running dump's progress for `dump_progress` until the entry drops.
+    fn track_progress(
+        &self,
+        query_id: &str,
+    ) -> (
+        ProgressEntry,
+        impl Fn(u64, u64, &str) + Send + Sync + 'static,
+    ) {
+        let entry = ProgressEntry {
+            id: query_id.to_owned(),
+            progress: self.progress.clone(),
+        };
+        let progress = self.progress.clone();
+        let id = query_id.to_owned();
+        let report = move |done: u64, total: u64, label: &str| {
+            if let Ok(mut progress) = progress.lock() {
+                progress.insert(
+                    id.clone(),
+                    super::dump::DumpProgress {
+                        done,
+                        total,
+                        label: label.to_owned(),
+                    },
+                );
+            }
+        };
+        (entry, report)
+    }
+
+    /// Runs one operation on an open connection, cancellable through `cancel(query_id)`.
+    async fn operation<T, F, Fut>(&self, connection_id: &str, query_id: &str, run: F) -> DbResult<T>
+    where
+        F: FnOnce(DatabasePool, CancellationToken) -> Fut,
+        Fut: std::future::Future<Output = DbResult<T>>,
+    {
         validate_id(query_id)?;
         // Hold read guard until registration so disconnect cannot miss this query.
         let connections = self.connections.read().await;
@@ -318,11 +406,7 @@ impl DatabaseState {
             id: query_id.to_owned(),
             active: self.active.clone(),
         };
-        if script {
-            super::script::execute(&pool, sql, cancel).await
-        } else {
-            pool.execute(sql, max_rows, cancel).await
-        }
+        run(pool, cancel).await
     }
 
     pub fn cancel(&self, query_id: &str) -> DbResult<()> {

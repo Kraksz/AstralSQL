@@ -32,6 +32,10 @@ pub fn run() {
             commands::cancel_query,
             commands::get_schema,
             commands::forget_password,
+            commands::pick_database_dump,
+            commands::export_database,
+            commands::import_database,
+            commands::dump_progress,
         ])
         .run(tauri::generate_context!())
         .expect("Astral SQL could not initialize its native window");

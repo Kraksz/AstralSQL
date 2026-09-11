@@ -125,49 +125,64 @@ pub async fn schema(pool: &MySqlPool) -> DbResult<Vec<TableSchema>> {
         return Err("Schema contains more than 1,000 tables. Narrow the database permissions before inspection.".into());
     }
     let mut result = Vec::with_capacity(tables.len());
+    let mut index = std::collections::HashMap::with_capacity(tables.len());
     for table in tables {
         let name: String = table.try_get("table_name").map_err(|e| e.to_string())?;
-        // MySQL 8 can expose schema identifiers and attributes as binary metadata.
-        // Request UTF-8 for every textual projection, including on case-sensitive Linux hosts.
-        let columns = sqlx::query("SELECT CAST(COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS column_name, CAST(COLUMN_TYPE AS CHAR CHARACTER SET utf8mb4) AS data_type, CAST(IS_NULLABLE AS CHAR CHARACTER SET utf8mb4) AS is_nullable, CAST(COLUMN_KEY AS CHAR CHARACTER SET utf8mb4) AS column_key FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY ORDINAL_POSITION")
-            .bind(&database).bind(&name).fetch_all(pool).await.map_err(|e| e.to_string())?;
-        let columns = columns
-            .iter()
-            .map(|row| {
-                Ok(SchemaColumn {
-                    name: row.try_get("column_name")?,
-                    data_type: row.try_get("data_type")?,
-                    nullable: row.try_get::<String, _>("is_nullable")? == "YES",
-                    primary_key: row.try_get::<String, _>("column_key")? == "PRI",
-                })
-            })
-            .collect::<Result<_, sqlx::Error>>()
-            .map_err(|e| e.to_string())?;
-        let keys = sqlx::query("SELECT CAST(COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS column_name, CAST(REFERENCED_TABLE_SCHEMA AS CHAR CHARACTER SET utf8mb4) AS referenced_schema, CAST(REFERENCED_TABLE_NAME AS CHAR CHARACTER SET utf8mb4) AS referenced_table, CAST(REFERENCED_COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS referenced_column FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION")
-            .bind(&database).bind(&name).fetch_all(pool).await.map_err(|e| e.to_string())?;
-        let foreign_keys = keys
-            .iter()
-            .map(|row| {
-                let target_schema: String = row.try_get("referenced_schema")?;
-                let target: String = row.try_get("referenced_table")?;
-                Ok(ForeignKey {
-                    column: row.try_get("column_name")?,
-                    referenced_table: if target_schema == database {
-                        target
-                    } else {
-                        format!("{target_schema}.{target}")
-                    },
-                    referenced_column: row.try_get("referenced_column")?,
-                })
-            })
-            .collect::<Result<_, sqlx::Error>>()
-            .map_err(|e| e.to_string())?;
+        index.insert(name.clone(), result.len());
         result.push(TableSchema {
             name,
             schema: Some(database.clone()),
-            columns,
-            foreign_keys,
+            columns: Vec::new(),
+            foreign_keys: Vec::new(),
         });
+    }
+    // Fetch columns and keys for the whole database at once, not per table: remote
+    // servers with hundreds of tables otherwise exceed the timeout on round trips alone.
+    // MySQL 8 can expose schema identifiers and attributes as binary metadata.
+    // Request UTF-8 for every textual projection, including on case-sensitive Linux hosts.
+    let columns = sqlx::query("SELECT CAST(TABLE_NAME AS CHAR CHARACTER SET utf8mb4) AS table_name, CAST(COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS column_name, CAST(COLUMN_TYPE AS CHAR CHARACTER SET utf8mb4) AS data_type, CAST(IS_NULLABLE AS CHAR CHARACTER SET utf8mb4) AS is_nullable, CAST(COLUMN_KEY AS CHAR CHARACTER SET utf8mb4) AS column_key FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME, ORDINAL_POSITION")
+        .bind(&database).fetch_all(pool).await.map_err(|e| e.to_string())?;
+    let decode_column = |row: &MySqlRow| -> Result<(String, SchemaColumn), sqlx::Error> {
+        Ok((
+            row.try_get("table_name")?,
+            SchemaColumn {
+                name: row.try_get("column_name")?,
+                data_type: row.try_get("data_type")?,
+                nullable: row.try_get::<String, _>("is_nullable")? == "YES",
+                primary_key: row.try_get::<String, _>("column_key")? == "PRI",
+            },
+        ))
+    };
+    for row in &columns {
+        let (table, column) = decode_column(row).map_err(|e| e.to_string())?;
+        // A table created after the table listing is skipped until the next refresh.
+        if let Some(&i) = index.get(&table) {
+            result[i].columns.push(column);
+        }
+    }
+    let keys = sqlx::query("SELECT CAST(TABLE_NAME AS CHAR CHARACTER SET utf8mb4) AS table_name, CAST(COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS column_name, CAST(REFERENCED_TABLE_SCHEMA AS CHAR CHARACTER SET utf8mb4) AS referenced_schema, CAST(REFERENCED_TABLE_NAME AS CHAR CHARACTER SET utf8mb4) AS referenced_table, CAST(REFERENCED_COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS referenced_column FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION")
+        .bind(&database).fetch_all(pool).await.map_err(|e| e.to_string())?;
+    let decode_key = |row: &MySqlRow| -> Result<(String, ForeignKey), sqlx::Error> {
+        let target_schema: String = row.try_get("referenced_schema")?;
+        let target: String = row.try_get("referenced_table")?;
+        Ok((
+            row.try_get("table_name")?,
+            ForeignKey {
+                column: row.try_get("column_name")?,
+                referenced_table: if target_schema == database {
+                    target
+                } else {
+                    format!("{target_schema}.{target}")
+                },
+                referenced_column: row.try_get("referenced_column")?,
+            },
+        ))
+    };
+    for row in &keys {
+        let (table, key) = decode_key(row).map_err(|e| e.to_string())?;
+        if let Some(&i) = index.get(&table) {
+            result[i].foreign_keys.push(key);
+        }
     }
     Ok(result)
 }

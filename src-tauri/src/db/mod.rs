@@ -1,3 +1,4 @@
+pub mod dump;
 pub mod mysql;
 pub mod pool;
 pub mod postgres;
@@ -267,6 +268,15 @@ mod tests {
         assert!(validate_sql("SELECT 1; DROP TABLE users;", Driver::Sqlite).is_err());
         assert!(validate_sql("-- only a comment", Driver::Sqlite).is_err());
         assert!(validate_sql("BEGIN", Driver::Postgres).is_err());
+    }
+    #[test]
+    fn mysql_metadata_conversion_parses() {
+        // The drop-table listing (src/lib/dropTables.ts) converts metadata with CONVERT ... USING.
+        assert!(validate_sql(
+            "SELECT CONVERT(TABLE_SCHEMA USING utf8mb4) AS table_schema, CONVERT(TABLE_NAME USING utf8mb4) AS table_name FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME",
+            Driver::MariaDb
+        )
+        .is_ok());
     }
     #[test]
     fn nested_json_keeps_large_integers() {
