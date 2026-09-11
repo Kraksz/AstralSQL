@@ -8,6 +8,7 @@ import {
   KeyRound,
   Text,
   CalendarDays,
+  Trash2,
 } from "lucide-react";
 import type { QueryResult } from "../../lib/types";
 import { formatCell } from "./exportUtils";
@@ -15,6 +16,8 @@ import { formatCell } from "./exportUtils";
 export interface VirtualTableProps {
   result: QueryResult;
   filter?: string;
+  /** Receives the row's index in `result.rows`; omit when rows cannot be deleted. */
+  onDeleteRow?: (rowIndex: number) => void;
 }
 
 function columnWidth(name: string): number {
@@ -27,7 +30,11 @@ function columnWidth(name: string): number {
   return Math.max(142, name.length * 9 + 56);
 }
 
-export function VirtualTable({ result, filter = "" }: VirtualTableProps) {
+export function VirtualTable({
+  result,
+  filter = "",
+  onDeleteRow,
+}: VirtualTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const tableId = useId();
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
@@ -201,6 +208,7 @@ export function VirtualTable({ result, filter = "" }: VirtualTableProps) {
                 className="data-grid-row"
                 role="row"
                 aria-rowindex={virtualRow.index + 2}
+                data-row-index={row.index}
                 key={row.index}
                 style={{
                   gridTemplateColumns,
@@ -211,7 +219,17 @@ export function VirtualTable({ result, filter = "" }: VirtualTableProps) {
                 }}
               >
                 <div className="data-grid-cell row-index" role="cell">
-                  {row.index + 1}
+                  <span className="row-number">{row.index + 1}</span>
+                  {onDeleteRow && (
+                    <button
+                      className="row-delete"
+                      aria-label={`Delete row ${row.index + 1}`}
+                      title="Delete this row"
+                      onClick={() => onDeleteRow(row.index)}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
                 {row.cells.map((value, columnIndex) => {
                   const column = result.columns[columnIndex];

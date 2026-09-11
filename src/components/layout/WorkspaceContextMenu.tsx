@@ -5,35 +5,40 @@ export default function WorkspaceContextMenu({
   onImport,
   onRefresh,
   onConnections,
+  onDeleteRow,
 }: {
   onNew: () => void;
   onImport: () => void;
   onRefresh: () => void;
   onConnections: () => void;
+  /** Offered when the menu opens over a result row (`data-row-index`). */
+  onDeleteRow?: (rowIndex: number) => void;
 }) {
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    row?: number;
+  } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const open = (event: MouseEvent) => {
-      if (
-        (event.target as Element).closest(
-          "input,textarea,[contenteditable=true],dialog",
-        )
-      )
+      const target = event.target as Element;
+      if (target.closest("input,textarea,[contenteditable=true],dialog"))
         return;
       event.preventDefault();
-      setPosition({
+      const row =
+        target.closest<HTMLElement>("[data-row-index]")?.dataset.rowIndex;
+      setMenu({
         x: Math.max(8, Math.min(event.clientX, window.innerWidth - 232)),
-        y: Math.max(8, Math.min(event.clientY, window.innerHeight - 202)),
+        y: Math.max(8, Math.min(event.clientY, window.innerHeight - 246)),
+        row: row === undefined ? undefined : Number(row),
       });
     };
     const close = (event: Event) => {
-      if (!ref.current?.contains(event.target as Node)) setPosition(null);
+      if (!ref.current?.contains(event.target as Node)) setMenu(null);
     };
     const keys = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPosition(null);
+      if (event.key === "Escape") setMenu(null);
     };
     document.addEventListener("contextmenu", open);
     document.addEventListener("pointerdown", close);
@@ -47,16 +52,32 @@ export default function WorkspaceContextMenu({
     };
   }, []);
   useEffect(() => {
-    if (position) ref.current?.querySelector("button")?.focus();
-  }, [position]);
-  if (!position) return null;
+    if (menu) ref.current?.querySelector("button")?.focus();
+  }, [menu]);
+  if (!menu) return null;
+  const row = menu.row;
+  const items: [string, () => void, boolean][] = [
+    ...(row !== undefined && onDeleteRow
+      ? [
+          ["Delete row", () => onDeleteRow(row), true] as [
+            string,
+            () => void,
+            boolean,
+          ],
+        ]
+      : []),
+    ["New query", onNew, false],
+    ["Open SQL file…", onImport, false],
+    ["Refresh schema", onRefresh, false],
+    ["Connections…", onConnections, false],
+  ];
   return (
     <div
       ref={ref}
       role="menu"
       aria-label="Workspace actions"
       className="workspace-context-menu"
-      style={{ left: position.x, top: position.y }}
+      style={{ left: menu.x, top: menu.y }}
       onKeyDown={(e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
           e.preventDefault();
@@ -71,19 +92,13 @@ export default function WorkspaceContextMenu({
         }
       }}
     >
-      {(
-        [
-          ["New query", onNew],
-          ["Open SQL file…", onImport],
-          ["Refresh schema", onRefresh],
-          ["Connections…", onConnections],
-        ] as const
-      ).map(([label, action]) => (
+      {items.map(([label, action, danger]) => (
         <button
           role="menuitem"
           key={label}
+          className={danger ? "is-danger" : undefined}
           onClick={() => {
-            setPosition(null);
+            setMenu(null);
             action();
           }}
         >

@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 
-/** Destructive confirmation: the action unlocks only after typing `confirmText`. */
+/**
+ * Destructive confirmation. With `confirmText`, the action unlocks only after
+ * typing it; `preview` shows the exact SQL that will run.
+ */
 export default function ConfirmDropDialog({
   title,
   detail,
   confirmText,
+  preview,
   actionLabel,
+  busyLabel = "Dropping…",
   onConfirm,
   onClose,
 }: {
   title: string;
   detail: string;
-  confirmText: string;
+  confirmText?: string;
+  preview?: string;
   actionLabel: string;
+  busyLabel?: string;
   onConfirm: () => Promise<void>;
   onClose: () => void;
 }) {
@@ -21,7 +28,7 @@ export default function ConfirmDropDialog({
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const matches = typed === confirmText;
+  const matches = !confirmText || typed === confirmText;
   useEffect(() => {
     ref.current?.showModal();
   }, []);
@@ -51,22 +58,25 @@ export default function ConfirmDropDialog({
       </span>
       <h2>{title}</h2>
       <p>{detail}</p>
-      <label className="danger-confirm">
-        <span>
-          Type <code>{confirmText}</code> to confirm
-        </span>
-        <input
-          autoFocus
-          value={typed}
-          spellCheck={false}
-          autoComplete="off"
-          disabled={busy}
-          onChange={(e) => setTyped(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void confirm();
-          }}
-        />
-      </label>
+      {preview && <pre aria-label="SQL that will run">{preview}</pre>}
+      {confirmText && (
+        <label className="danger-confirm">
+          <span>
+            Type <code>{confirmText}</code> to confirm
+          </span>
+          <input
+            autoFocus
+            value={typed}
+            spellCheck={false}
+            autoComplete="off"
+            disabled={busy}
+            onChange={(e) => setTyped(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void confirm();
+            }}
+          />
+        </label>
+      )}
       {error && (
         <pre className="dialog-error" role="alert">
           {error}
@@ -81,7 +91,7 @@ export default function ConfirmDropDialog({
           disabled={!matches || busy}
           onClick={() => void confirm()}
         >
-          {busy ? "Dropping…" : actionLabel}
+          {busy ? busyLabel : actionLabel}
         </button>
       </footer>
     </dialog>

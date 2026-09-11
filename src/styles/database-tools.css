@@ -129,3 +129,35 @@
   font-size: 11px;
   overflow-wrap: anywhere;
 }
+.data-grid-row .row-delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  color: #c98a7f;
+}
+.data-grid-row:hover .row-delete,
+.data-grid-row:focus-within .row-delete {
+  display: inline-flex;
+}
+.data-grid-row:hover .row-number,
+.data-grid-row:focus-within .row-number {
+  display: none;
+}
+.data-grid-row .row-delete:hover {
+  background: #2e201f;
+  color: #f2b9a8;
+}
+@media (hover: none) {
+  .data-grid-row .row-delete {
+    display: inline-flex;
+  }
+  .data-grid-row .row-number {
+    display: none;
+  }
+}
+.workspace-context-menu button.is-danger {
+  color: #f2b9a8;
+}

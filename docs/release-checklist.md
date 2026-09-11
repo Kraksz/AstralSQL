@@ -1,4 +1,4 @@
-# Release verification — 0.1.5 beta
+# Release verification — 0.1.6 beta
 
 This document records checks for the source package. It is not a claim that every
 server, operating system, or SQL dialect has been validated.
@@ -40,8 +40,9 @@ Earlier database validation on September 10–11, 2026: 59 frontend tests and 15
 - [ ] External TLS, SSH tunnel, and real hosting configuration validation by the server owner.
 - [x] First GitHub Actions runs in the published repository (commit `614bfb6`: frontend/site, native Windows/Linux, and all three disposable database jobs passed).
 
-Built-in SSH management, interactive transactions, and direct in-grid editing are
-not implemented. SQL script execution is not cross-engine dump conversion.
+Built-in SSH management, interactive transactions, and in-grid editing other than
+deleting a row by its primary key are not implemented. SQL script execution is not
+cross-engine dump conversion.
 Publish a clearly labelled beta until the stable-release gates are completed.
 
 ## 0.1.5 UI and docs verification
@@ -51,3 +52,10 @@ Publish a clearly labelled beta until the stable-release gates are completed.
 - Docs search, FAQ disclosures, connection-error disclosures, wrapped command blocks, and phone documentation navigation checked in browser.
 - Website and platform source-build instructions do not claim verified Linux/macOS/iOS installers.
 - GitBook Markdown handbook is prepared for Git Sync; no GitBook workspace has been connected.
+
+## 0.1.6 database tools verification
+
+- MySQL/MariaDB schema inspection loads tables, columns and foreign keys in three queries instead of two per table, so a remote MariaDB with hundreds of tables no longer hits the 30-second limit.
+- New: drop one table or all tables, whole-database `.sql` export and import for MySQL/MariaDB, and deleting a result row by its primary key.
+- Checks on September 12, 2026: 25 native tests (including dump statement splitting, literal encoding and generated-column detection) and 64 frontend tests passed; TypeScript, frontend, and Windows NSIS/MSI release builds succeeded.
+- Export, import and row delete have not yet been verified against a live MySQL/MariaDB server or in the installed app. Test them on a copy of the data first.

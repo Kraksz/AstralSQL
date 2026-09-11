@@ -283,6 +283,7 @@ export default function App() {
         const data = script
           ? await importSqlScript(target, sql, id)
           : await runQuery(target, sql, maxRows, id);
+        if (!script) tools.recordResult(key, sql, data);
         setQueryViews((previous) => ({
           ...previous,
           [key]: { result: data, error: "" },
@@ -638,6 +639,16 @@ export default function App() {
     onToast: setToast,
     onError: setError,
   });
+  const rowsDeletable = tools.canDeleteRows(contextKey, result, tables);
+  function deleteRow(rowIndex: number) {
+    const key = contextKey;
+    tools.openDeleteRow(key, result, rowIndex, tables, (next) =>
+      setQueryViews((previous) => ({
+        ...previous,
+        [key]: { result: next, error: "" },
+      })),
+    );
+  }
   const actions: PaletteAction[] = [
     {
       id: "guide",
@@ -736,6 +747,7 @@ export default function App() {
             void loadConnection(connectionId);
         }}
         onConnections={() => setShowConnections(true)}
+        onDeleteRow={result ? deleteRow : undefined}
       />
       <NavigationRail
         onHelp={() => setShowGuide(true)}
@@ -1187,6 +1199,7 @@ export default function App() {
                           key={contextKey}
                           result={result}
                           filter={querySearch}
+                          onDeleteRow={rowsDeletable ? deleteRow : undefined}
                         />
                       ) : (
                         <div className="empty-state">
@@ -1406,7 +1419,7 @@ export default function App() {
           <ShieldCheck size={12} />
           {desktop ? "Native Rust runtime" : "Local SQLite · Browser preview"}
           <span className="statusbar-divider" />
-          <span>v0.1.5</span>
+          <span>v0.1.6</span>
           <Sparkles size={12} />
         </div>
       </footer>
