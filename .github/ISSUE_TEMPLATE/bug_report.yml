@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible problem using synthetic data.
+body:
+  - type: markdown
+    attributes:
+      value: Do not include passwords, private database dumps, or sensitive screenshots. Use private reporting for security issues.
+  - type: input
+    id: version
+    attributes:
+      label: Astral version and operating system
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Database engine
+      options: [SQLite, MariaDB, MySQL, PostgreSQL, Website / interface]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include minimal SQL with synthetic data if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

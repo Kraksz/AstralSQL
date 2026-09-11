@@ -1,0 +1,805 @@
+/* Astral's workspace: a navigation rail, quiet explorer, and paired query/result canvases. */
+.astral-studio {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-rows: 56px minmax(0, 1fr) 27px;
+  min-width: 360px;
+  background: #050a12;
+}
+
+/* An inset instrument panel gives Astral its own workspace silhouette. */
+.astral-studio .workspace-heading { border-bottom: 1px solid #203b50; margin-bottom: 18px; }
+.astral-studio .workspace-title-row h1 { font-weight: 500; letter-spacing: -1.4px; }
+.astral-studio .workspace-eyebrow { color: #91c5de; letter-spacing: 0.16em; }
+.astral-studio .query-workbench { border-radius: 16px; box-shadow: 0 12px 48px #02061740; }
+.astral-studio .navigation-rail { background: linear-gradient(180deg, #0d2434, #06101b 45%); }
+.astral-studio .navigation-rail button.active { background: #15394d; box-shadow: inset 3px 0 #7dd3fc; border-radius: 5px 12px 12px 5px; }
+.astral-studio .connection-item.active { box-shadow: inset 2px 0 #7dd3fc; }
+.navigation-rail {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 17px 8px 8px;
+  gap: 12px;
+  background: #050a12;
+  border-right: 1px solid #182635;
+  z-index: 5;
+}
+.rail-logo {
+  width: 30px;
+  height: 32px;
+  margin-bottom: 23px;
+}
+.navigation-rail button {
+  width: 54px;
+  min-height: 53px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #6e859a;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.navigation-rail button span {
+  font-size: 9px;
+}
+.navigation-rail button:hover {
+  color: #d9efff;
+  background: #101d2b;
+}
+.navigation-rail button.active {
+  color: #a6e4ff;
+  background: #113148;
+  box-shadow: inset 0 0 0 1px #24526b;
+}
+.rail-spacer {
+  flex: 1;
+}
+.rail-local {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #203447;
+  border-radius: 50%;
+  margin: 4px 0;
+}
+.rail-local span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7dd3fc;
+  box-shadow: 0 0 12px #38bdf866;
+}
+.astral-studio .app-header {
+  grid-column: 2;
+  grid-row: 1;
+  height: 56px;
+  min-height: 0;
+  padding: 0 23px;
+  gap: 16px;
+  background: #080f18;
+  border-color: #182635;
+}
+.astral-studio .brand {
+  width: auto;
+  font-size: 22px;
+  letter-spacing: -1px;
+  margin-right: 13px;
+}
+.astral-studio .brand img {
+  width: 23px;
+  height: 25px;
+}
+.astral-studio .brand-sql {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #8097aa;
+}
+.astral-studio .version {
+  display: none;
+}
+.astral-studio .header-path {
+  font-size: 11px;
+}
+.astral-studio .global-search {
+  width: 240px;
+  background: #101b28;
+  border-color: #223346;
+  border-radius: 8px;
+  height: 33px;
+}
+.astral-studio .avatar {
+  display: none;
+}
+.astral-studio .sidebar-toggle {
+  display: inline-flex;
+}
+.astral-studio .app-body {
+  grid-column: 2;
+  grid-row: 2;
+  overflow: hidden;
+}
+.astral-studio .sidebar {
+  width: 215px;
+  min-width: 215px;
+  background: #080f18;
+  padding: 22px 13px 0;
+  border-color: #182635;
+}
+.astral-studio .workspace-switch {
+  padding: 0 6px 25px;
+}
+.astral-studio .workspace-switch strong {
+  font-size: 12px;
+}
+.astral-studio .workspace-switch span {
+  font-size: 10px;
+}
+.astral-studio .workspace-icon {
+  display: none;
+}
+.astral-studio .sidebar-navigation {
+  display: none;
+}
+.astral-studio .section-label {
+  color: #668297;
+  letter-spacing: 1.3px;
+  margin-top: 8px;
+}
+.astral-studio .connection-item {
+  border-radius: 9px;
+  margin-bottom: 5px;
+  padding: 11px 8px;
+}
+.astral-studio .connection-item.selected {
+  background: #102333;
+  border-color: #284c62;
+  box-shadow: none;
+}
+.astral-studio .connection-symbol {
+  background: #15364a;
+  border-radius: 7px;
+  width: 29px;
+  height: 32px;
+}
+.astral-studio .sidebar-bottom {
+  background: #0d1a27;
+  border: 1px solid #1b3347;
+  border-radius: 10px;
+  margin: auto 0 18px;
+  padding: 12px;
+}
+.astral-studio .sidebar-bottom p {
+  color: #6b8296;
+}
+.astral-studio .workspace {
+  padding: 0 25px;
+  background: radial-gradient(
+    ellipse at 55% -40%,
+    #123c51 0%,
+    #0b1622 42%,
+    #0a121d 70%
+  );
+}
+.astral-studio .workspace-heading {
+  padding: 24px 0 22px;
+}
+.astral-studio .heading-aurora {
+  opacity: 0.24;
+  mask-image: linear-gradient(to right, transparent 35%, black);
+}
+.astral-studio .workspace-eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  color: #89a7bc;
+}
+.workspace-breadcrumb {
+  letter-spacing: 0;
+  color: #557287;
+  margin-left: 2px;
+}
+.astral-studio .workspace-title-row {
+  margin-top: 11px;
+}
+.astral-studio .workspace h1 {
+  font-size: 31px;
+  font-weight: 500;
+  letter-spacing: -1.2px;
+}
+.astral-studio .workspace-title-row p {
+  font-size: 11px;
+  color: #88a1b5;
+  margin-top: 8px;
+}
+.astral-studio .workspace-title-row p span {
+  padding: 0 7px;
+  color: #446178;
+}
+.studio-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.studio-actions > .icon-button {
+  width: 33px;
+  height: 33px;
+  border: 1px solid #253e51;
+  border-radius: 8px;
+  color: #91aec3;
+}
+.astral-studio .studio-actions .secondary-button {
+  background: #b2e8ff;
+  color: #103449;
+  border-color: #c1edff;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 10px 13px;
+}
+.astral-studio .workbench {
+  border-radius: 14px;
+  border-color: #2a4154;
+  box-shadow: 0 16px 40px #0002;
+  background: #0b1420;
+}
+.astral-studio .query-tabs {
+  background: #101d2a;
+  min-height: 47px;
+  padding: 7px 10px;
+  gap: 6px;
+  border-color: #223548;
+}
+.astral-studio .query-tab {
+  height: 31px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 0 2px;
+}
+.astral-studio .query-tab.active {
+  border-color: #32566e;
+  background: #1a3345;
+  box-shadow: none;
+}
+.astral-studio .query-tab.active::after {
+  display: none;
+}
+.astral-studio .query-tab > button:first-child {
+  color: #a8bed0;
+  font-size: 11px;
+}
+.astral-studio .query-tab.active > button:first-child {
+  color: #d3f0ff;
+}
+.astral-studio .tab-dot,
+.astral-studio .tab-hint {
+  display: none;
+}
+.astral-studio .editor-toolbar {
+  background: #0b1622;
+  min-height: 48px;
+  padding: 0 13px;
+  border-color: #23394b;
+  gap: 6px;
+}
+.astral-studio .editor-context select {
+  max-width: 155px;
+  font-size: 11px;
+}
+.astral-studio .schema-name,
+.astral-studio .editor-context > .toolbar-divider,
+.astral-studio .editor-context > svg:last-child {
+  display: none;
+}
+.astral-studio .run-button {
+  border-radius: 7px;
+  color: #052b42;
+  background: #9ddfff;
+  border: 1px solid #bcecff;
+  padding: 7px 11px;
+  box-shadow: 0 2px 12px #38bdf81a;
+}
+.astral-studio .editor-container {
+  background: #0d1825;
+}
+.astral-studio .editor-watermark {
+  color: #203d50;
+  opacity: 0.55;
+}
+.astral-studio .editor-container .cm-line {
+  line-height: 1.95;
+}
+.astral-studio .editor-container .cm-gutters {
+  color: #577187 !important;
+}
+.astral-studio .results-toolbar {
+  min-height: 48px;
+  background: #0b1622;
+  border-color: #23394b;
+  padding: 0 10px;
+}
+.astral-studio .result-tabs button {
+  font-size: 11px;
+  height: 32px;
+  border-radius: 6px;
+  padding: 0 10px;
+}
+.astral-studio .result-tabs button.active {
+  background: #163046;
+  box-shadow: none;
+  color: #b6e7ff;
+}
+.astral-studio .results-content {
+  background: #08111c;
+}
+.astral-studio .result-controls {
+  background: #0c1b28;
+  min-height: 43px;
+  padding: 0 12px;
+  border-color: #1e3446;
+  gap: 10px;
+}
+.astral-studio .data-grid-header {
+  background: #102130;
+  color: #b9d1e3;
+}
+.astral-studio .data-grid-cell {
+  border-color: #14293a;
+  font-size: 11px;
+}
+.astral-studio .results-footer,
+.astral-studio .editor-footer {
+  background: #0c1a27;
+  color: #88a3b8;
+  border-color: #23394b;
+  min-height: 33px;
+  font-size: 9px;
+}
+.astral-studio .workspace-bottom {
+  min-height: 38px;
+  color: #638298;
+}
+.astral-studio .workspace-bottom > button {
+  color: #8fabbf;
+}
+.astral-studio .statusbar {
+  grid-column: 2;
+  grid-row: 3;
+  background: #080f18;
+  border-color: #182635;
+  padding: 0 18px;
+}
+.astral-studio .inspector {
+  position: absolute;
+  right: 12px;
+  top: 70px;
+  bottom: 40px;
+  width: 260px;
+  border: 1px solid #304c61;
+  border-radius: 13px;
+  background: #0c1926;
+  z-index: 9;
+  box-shadow: -15px 0 70px #0008;
+}
+.connection-manager {
+  width: min(790px, calc(100vw - 32px));
+  max-height: 85dvh;
+  padding: 30px;
+  background: #0b1723;
+  border: 1px solid #35576e;
+  border-radius: 20px;
+  color: #e5f1fa;
+  box-shadow: 0 30px 120px #0009;
+}
+.connection-manager::backdrop {
+  background: #010812b8;
+  backdrop-filter: blur(9px);
+}
+.connection-manager header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+}
+.section-kicker {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #80bddb;
+}
+.connection-manager h2 {
+  font-size: 29px;
+  letter-spacing: -1px;
+  font-weight: 500;
+  margin: 9px 0;
+}
+.connection-manager header p {
+  font-size: 12px;
+  color: #8da9bd;
+}
+.connection-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.connection-card {
+  padding: 19px;
+  border: 1px solid #29465b;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #142a3b, #0d1c29);
+  min-width: 0;
+}
+.connection-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.connection-card-icon {
+  padding: 10px;
+  border: 1px solid #356582;
+  background: #173f57;
+  border-radius: 10px;
+  display: flex;
+  color: #a1dfff;
+}
+.connection-state {
+  font-size: 10px;
+  color: #7d97aa;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: #1a2935;
+}
+.connection-state.online {
+  color: #a8e3fb;
+  background: #164057;
+}
+.connection-card h3 {
+  margin: 19px 0 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+.connection-card p,
+.connection-card code {
+  font-size: 11px;
+  color: #8da7bc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+.connection-card p span {
+  padding: 0 4px;
+}
+.connection-card footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 21px;
+  border-top: 1px solid #284256;
+  padding-top: 12px;
+}
+.connection-card footer > button:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #b6eaff;
+  padding: 0;
+}
+.manager-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+@media (min-width: 1180px) {
+  .astral-studio.split-layout .workbench:not(.library-workbench) {
+    display: grid;
+    grid-template-columns: minmax(350px, 0.9fr) minmax(390px, 1.1fr);
+    grid-template-rows: 47px 49px minmax(0, 1fr) auto 33px;
+  }
+  .split-layout .query-tabs {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .split-layout .editor-toolbar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .astral-studio.split-layout .editor-container {
+    grid-column: 1;
+    grid-row: 3 / 5;
+    height: auto;
+    min-height: 0;
+    border-right: 1px solid #2a4154;
+  }
+  .split-layout .editor-footer {
+    grid-column: 1;
+    grid-row: 5;
+    border-right: 1px solid #2a4154;
+  }
+  .split-layout .editor-footer > div:last-child {
+    display: none;
+  }
+  .split-layout .results-toolbar {
+    grid-column: 2;
+    grid-row: 2;
+    border-left: 1px solid #2a4154;
+  }
+  .astral-studio.split-layout .results-content {
+    grid-column: 2;
+    grid-row: 3;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .split-layout .query-error {
+    grid-column: 2;
+    grid-row: 4;
+    max-height: 120px;
+    overflow: auto;
+  }
+  .split-layout .results-footer {
+    grid-column: 2;
+    grid-row: 5;
+  }
+  .split-layout .editor-actions {
+    gap: 3px;
+  }
+  .split-layout .run-button kbd {
+    display: none;
+  }
+  .split-layout .editor-actions .icon-button {
+    min-width: 24px;
+    padding: 3px;
+  }
+  .split-layout .result-controls .row-filter input {
+    width: 110px;
+  }
+  .split-layout .row-limit {
+    font-size: 0;
+  }
+}
+@media (max-width: 1179px) {
+  .astral-studio .layout-toggle {
+    display: none;
+  }
+  .astral-studio .sidebar {
+    width: 200px;
+    min-width: 200px;
+  }
+  .astral-studio .workspace {
+    padding: 0 18px;
+  }
+  .astral-studio .editor-container {
+    height: 230px;
+  }
+  .astral-studio .privacy-label {
+    display: none;
+  }
+}
+@media (max-height: 800px) {
+  .astral-studio .workspace-heading {
+    padding: 16px 0;
+  }
+  .astral-studio.stacked-layout .editor-container {
+    height: 150px;
+  }
+}
+@media (max-width: 1179px) and (max-height: 800px) {
+  .astral-studio .editor-container {
+    height: 150px;
+  }
+}
+@media (max-width: 760px) {
+  .astral-studio {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+  .navigation-rail {
+    padding: 14px 4px 6px;
+    gap: 8px;
+  }
+  .navigation-rail button {
+    width: 43px;
+  }
+  .navigation-rail button span {
+    font-size: 8px;
+  }
+  .rail-logo {
+    width: 27px;
+  }
+  .astral-studio .app-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .astral-studio .brand {
+    font-size: 20px;
+    margin-right: 0;
+  }
+  .astral-studio .brand img,
+  .astral-studio .header-path,
+  .astral-studio .website-link {
+    display: none;
+  }
+  .astral-studio .global-search {
+    width: auto;
+    margin-left: auto;
+  }
+  .astral-studio .global-search span,
+  .astral-studio .global-search kbd {
+    display: none;
+  }
+  .astral-studio .workspace {
+    padding: 0 12px;
+  }
+  .astral-studio .workspace-heading {
+    padding: 20px 0;
+  }
+  .astral-studio .workspace h1 {
+    font-size: 24px;
+  }
+  .workspace-breadcrumb {
+    display: none;
+  }
+  .astral-studio .workspace-title-row p {
+    font-size: 9px;
+  }
+  .studio-actions {
+    gap: 5px;
+  }
+  .astral-studio .studio-actions .secondary-button {
+    font-size: 9px;
+    padding: 9px;
+  }
+  .astral-studio .studio-actions > .icon-button {
+    display: none;
+  }
+  .astral-studio .sidebar {
+    position: absolute;
+    left: 54px;
+    top: 56px;
+    bottom: 27px;
+    z-index: 8;
+    box-shadow: 20px 0 60px #0008;
+  }
+  .astral-studio .editor-container {
+    height: 210px;
+  }
+  .astral-studio .results-content {
+    min-height: 180px;
+  }
+  .astral-studio .statusbar {
+    font-size: 8px;
+  }
+  .astral-studio .statusbar > div:last-child {
+    display: none;
+  }
+  .astral-studio .workspace-bottom {
+    font-size: 8px;
+  }
+  .astral-studio .workspace-bottom button {
+    display: none;
+  }
+  .connection-cards {
+    grid-template-columns: 1fr;
+  }
+  .connection-manager {
+    padding: 22px;
+  }
+}
+.sql-import-dialog {
+  width: min(780px, calc(100vw - 40px));
+  max-height: 88vh;
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid #35576e;
+  border-radius: 16px;
+  background: #0b1723;
+  color: #e5f1fa;
+}
+.sql-import-dialog::backdrop {
+  background: #010812c9;
+  backdrop-filter: blur(8px);
+}
+.sql-import-dialog h2 {
+  margin: 10px 0;
+  font-size: 28px;
+  font-weight: 500;
+}
+.sql-import-dialog p {
+  color: #a0b5c7;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 14px 0;
+}
+.import-target {
+  padding: 14px;
+  border: 1px solid #2b4b62;
+  border-radius: 8px;
+  background: #10283a;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.sql-import-dialog pre {
+  background: #050d16;
+  border: 1px solid #233d51;
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 32vh;
+  overflow: auto;
+  font:
+    11px/1.7 "JetBrains Mono",
+    monospace;
+  white-space: pre;
+}
+.sql-import-dialog footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+.sql-import-dialog footer button {
+  padding: 10px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.workspace-context-menu {
+  position: fixed;
+  z-index: 100;
+  width: 224px;
+  padding: 7px;
+  background: #0d1c2b;
+  border: 1px solid #35576e;
+  border-radius: 10px;
+  box-shadow: 0 12px 35px #0008;
+}
+.workspace-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #c7e4f6;
+}
+.workspace-context-menu button:hover,
+.workspace-context-menu button:focus-visible {
+  background: #193a50;
+  outline: none;
+}
+/* A quiet celestial surface; motion stays away from SQL text and data rows. */
+.astral-studio .workspace-heading { position: relative; background: radial-gradient(ellipse at 85% 0%, #163a5038, transparent 68%); border-bottom: 1px solid #7dd3fc0b; }
+.navigation-rail button { position: relative; transition: color .18s, background .18s, box-shadow .18s, transform .18s; }
+.navigation-rail button.active { background: linear-gradient(135deg, #174361, #102a3d); box-shadow: inset 0 0 0 1px #7dd3fc38, 0 6px 18px #02061755; }
+.navigation-rail button.active::before { content: ''; position: absolute; width: 3px; height: 20px; left: -8px; top: 16px; background: #7dd3fc; border-radius: 0 4px 4px 0; box-shadow: 0 0 12px #38bdf877; }
+.navigation-rail button:hover { transform: translateY(-2px); }
+.navigation-rail button:active { transform: translateY(0) scale(.97); }
+.connection-card { transition: border-color .2s, box-shadow .2s, transform .2s; }
+.connection-card:hover { border-color: #38bdf866; box-shadow: 0 10px 28px #02061750; transform: translateY(-3px); }
+.astral-studio .query-tab { transition: background .2s, box-shadow .2s; }
+.astral-studio .query-tab.active { background: linear-gradient(180deg,#15364a,#10212f); box-shadow: inset 0 2px #7dd3fc; }
+.astral-studio .app-header { position: relative; }
+.astral-studio[data-query-running=true] .app-header::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg,transparent,#38bdf8,#bae6fd,transparent); background-size: 200% 100%; animation: query-flow 1.6s linear infinite; }
+@keyframes query-flow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: no-preference) {
+ .navigation-rail button.active::before { animation: rail-arrive .22s ease-out; }
+ .connection-manager, .workspace-context-menu, .sql-import-dialog { animation: panel-arrive .22s ease-out; }
+ @keyframes rail-arrive { from { opacity: 0; transform: scaleY(.3); } to { opacity: 1; transform: scaleY(1); } }
+ @keyframes panel-arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+}
+@media (prefers-reduced-motion: reduce) { .navigation-rail button:hover, .connection-card:hover, .navigation-rail button:active { transform: none; } .astral-studio[data-query-running=true] .app-header::after { animation: none; } }
+
+@media (max-height: 760px) { .navigation-rail { gap: 6px; padding-top: 12px; } .navigation-rail .rail-logo { margin-bottom: 12px; } .navigation-rail button { min-height: 43px; } .navigation-rail button.active::before { top: 12px; } }
+.motion-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 10px; border: 1px solid #7dd3fc38; border-radius: 9px; color: #bae6fd; background: #0b1e2bd9; font: 500 12px/1.4 Inter,system-ui,sans-serif; cursor: pointer; transition: border-color .2s, background .2s; }
+.motion-toggle:hover { background: #153a50; border-color: #7dd3fc88; }.motion-toggle:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 4px; }.motion-toggle:disabled { cursor: default; opacity: .7; }
+.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+.astral-studio .heading-aurora { opacity: .46; mask-image: linear-gradient(to right,transparent 15%,black); }
+.astral-studio .workbench { transition: border-color .25s, box-shadow .25s; }.astral-studio .workbench:focus-within { border-color: #39728d; box-shadow: 0 10px 40px #02061766, 0 0 0 1px #7dd3fc10; }
+.astral-studio .primary-button, .astral-studio .secondary-button { transition: background .18s, box-shadow .18s, transform .18s; }.astral-studio .primary-button:hover:not(:disabled), .astral-studio .secondary-button:hover:not(:disabled) { box-shadow: 0 4px 18px #38bdf822; }
+@media(max-width:1100px) { .studio-actions .motion-toggle { width: 33px; height: 33px; padding: 0; } .studio-actions .motion-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }

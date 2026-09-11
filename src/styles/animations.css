@@ -1,0 +1,32 @@
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+.toast,
+.connection-dialog,
+.command-palette {
+  animation: slide-in 0.2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

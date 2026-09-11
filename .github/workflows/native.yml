@@ -1,0 +1,44 @@
+name: Native Rust validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Linux credential-vault build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Test core and real SQLite integration
+        run: cargo test --workspace --no-default-features --locked
+      - uses: actions/setup-node@v4
+        if: runner.os == 'Windows'
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install frontend dependencies
+        if: runner.os == 'Windows'
+        run: npm ci
+      - name: Build bundled frontend
+        if: runner.os == 'Windows'
+        run: |
+          npm test
+          npm run build
+      - name: Check native Windows app and Tauri context
+        if: runner.os == 'Windows'
+        run: cargo check --workspace --all-targets --locked

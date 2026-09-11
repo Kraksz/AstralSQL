@@ -1,0 +1,54 @@
+name: Disposable database integration
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - driver: mysql
+            image: mysql:8.4
+            port: 3306
+            user: root
+            health: mysqladmin ping -h 127.0.0.1 -pastral-ci-disposable-only
+          - driver: mariadb
+            image: mariadb:11.4
+            port: 3306
+            user: root
+            health: mariadb-admin ping -h 127.0.0.1 -pastral-ci-disposable-only
+          - driver: postgres
+            image: postgres:17
+            port: 5432
+            user: postgres
+            health: pg_isready -U postgres -d astral_test
+    services:
+      db:
+        image: ${{ matrix.image }}
+        env:
+          # Disposable CI credentials, never a real database or production secret.
+          MYSQL_ROOT_PASSWORD: astral-ci-disposable-only
+          MYSQL_DATABASE: astral_test
+          POSTGRES_PASSWORD: astral-ci-disposable-only
+          POSTGRES_DB: astral_test
+        ports:
+          - ${{ matrix.port }}:${{ matrix.port }}
+        options: >-
+          --health-cmd="${{ matrix.health }}"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+      - name: Exercise connection, types, schema, SQL scripts and writes
+        run: cargo test --locked --no-default-features --test network_integration -- --ignored
+        env:
+          ASTRAL_TEST_DRIVER: ${{ matrix.driver }}
+          ASTRAL_TEST_HOST: 127.0.0.1
+          ASTRAL_TEST_PORT: ${{ matrix.port }}
+          ASTRAL_TEST_USER: ${{ matrix.user }}
+          ASTRAL_TEST_PASSWORD: astral-ci-disposable-only

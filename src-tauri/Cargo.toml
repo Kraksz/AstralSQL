@@ -1,0 +1,50 @@
+[package]
+name = "astral-sql"
+version = "0.1.5"
+description = "Local-first SQL with a Rust core"
+edition = "2021"
+rust-version = "1.88"
+license = "MIT"
+
+[lib]
+name = "astral_sql"
+path = "src/lib.rs"
+
+[[bin]]
+name = "astral-sql"
+path = "src/main.rs"
+required-features = ["desktop"]
+
+[features]
+default = ["desktop"]
+desktop = ["dep:tauri", "dep:tauri-build", "dep:rfd", "dep:windows-sys"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [], optional = true }
+
+[dependencies]
+tauri = { version = "2", features = [], optional = true }
+rfd = { version = "0.15.4", optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision"] }
+sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "sqlite", "postgres", "mysql", "chrono", "uuid", "json", "bigdecimal"] }
+sqlparser = { version = "0.62", default-features = false, features = ["std"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+futures-util = "0.3"
+chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
+uuid = { version = "1", features = ["serde"] }
+zeroize = "1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", optional = true, features = ["Win32_Foundation", "Win32_Graphics_Dwm"] }
+keyring = { version = "3.6.3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6.3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6.3", features = ["sync-secret-service", "crypto-rust"] }
+
+[dev-dependencies]
+tempfile = "3"

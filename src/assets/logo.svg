@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <title>Astral SQL</title>
+  <path d="M32 5L38.8 25.2L59 32L38.8 38.8L32 59L25.2 38.8L5 32L25.2 25.2Z" fill="#bae6fd"/>
+  <path d="M32 5L38.8 25.2L59 32L38.8 38.8L32 59V32Z" fill="#38bdf8"/>
+  <circle cx="32" cy="32" r="21" stroke="#7dd3fc" stroke-width=".8" opacity=".4"/>
+</svg>

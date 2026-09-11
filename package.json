@@ -1,0 +1,51 @@
+{
+  "name": "astral-sql",
+  "version": "0.1.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 1420",
+    "test": "vitest run",
+    "tauri": "tauri",
+    "desktop": "tauri dev",
+    "desktop:build": "tauri build",
+    "website:sync": "node scripts/sync-playground.mjs",
+    "source:zip": "node scripts/source-zip.mjs",
+    "format": "prettier --write src tests scripts/*.mjs *.json *.ts *.js README.md",
+    "release:check": "node scripts/check-release.mjs"
+  },
+  "dependencies": {
+    "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.6",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@lezer/highlight": "^1.2.3",
+    "@tanstack/react-virtual": "^3.13.12",
+    "@tauri-apps/api": "^2.8.0",
+    "@uiw/react-codemirror": "^4.25.2",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "sql-formatter": "^15.6.6",
+    "sql.js": "^1.13.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.4",
+    "@types/node": "^24.5.2",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@types/sql.js": "^1.4.9",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.0.3",
+    "fflate": "^0.8.3",
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.2",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,15 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = p => readFile(path.join(root, p), 'utf8');
+const pkg = JSON.parse(await read('package.json'));
+const lock = JSON.parse(await read('package-lock.json'));
+const config = JSON.parse(await read('src-tauri/tauri.conf.json'));
+const cargo = (await read('src-tauri/Cargo.toml')).match(/^version = "([^"]+)"/m)?.[1];
+const versions = [lock.version, lock.packages[''].version, config.version, cargo];
+if (versions.some(v => v !== pkg.version)) throw new Error('Package, lockfile, Tauri and Cargo versions must agree.');
+if (process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_REF_NAME !== `v${pkg.version}`) throw new Error('Release tag must match package version.');
+if (!(await read('website/app/page.tsx')).includes(`?v=${pkg.version}`)) throw new Error('Website download version is stale.');
+for (const file of ['LICENSE', 'SECURITY.md', 'CONTRIBUTING.md', 'docs/github-release.md', 'docs/release-checklist.md']) await read(file);
+console.log(`Release metadata and documentation checks passed for ${pkg.version}.`);
