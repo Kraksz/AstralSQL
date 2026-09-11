@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
+    "deploy:cloudflare": "npm run build && node scripts/prepare-cloudflare.mjs && wrangler deploy --config dist/server/wrangler.astral.json",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "format": "oxfmt"

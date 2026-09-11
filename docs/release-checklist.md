@@ -38,7 +38,7 @@ Earlier database validation on September 10–11, 2026: 59 frontend tests and 15
 - [ ] macOS and Linux desktop packaging and UI verification.
 - [ ] Measured startup, frame rate, and total process-tree memory on named hardware.
 - [ ] External TLS, SSH tunnel, and real hosting configuration validation by the server owner.
-- [ ] First GitHub Actions runs in the published repository.
+- [x] First GitHub Actions runs in the published repository (commit `614bfb6`: frontend/site, native Windows/Linux, and all three disposable database jobs passed).
 
 Built-in SSH management, interactive transactions, and direct in-grid editing are
 not implemented. SQL script execution is not cross-engine dump conversion.
@@ -46,7 +46,7 @@ Publish a clearly labelled beta until the stable-release gates are completed.
 
 ## 0.1.5 UI and docs verification
 
-- Frontend suite: 115 tests passed after removing obsolete pause-preference tests.
+- Historical frontend total of 115 included archived source copies. The isolated current suite has 56 tests, all passing on September 11, 2026; `vitest.config.ts` now excludes archives from discovery.
 - Windows NSIS package built successfully.
 - Docs search, FAQ disclosures, connection-error disclosures, wrapped command blocks, and phone documentation navigation checked in browser.
 - Website and platform source-build instructions do not claim verified Linux/macOS/iOS installers.

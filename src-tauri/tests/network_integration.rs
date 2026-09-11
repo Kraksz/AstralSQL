@@ -14,7 +14,7 @@ async fn network_database_round_trip() {
         "host": std::env::var("ASTRAL_TEST_HOST").unwrap_or_else(|_| "127.0.0.1".into()),
         "port": std::env::var("ASTRAL_TEST_PORT").unwrap().parse::<u16>().unwrap(),
         "database": "astral_test", "username": std::env::var("ASTRAL_TEST_USER").unwrap(),
-        "password": std::env::var("ASTRAL_TEST_PASSWORD").unwrap(), "sslMode": "disable"
+        "password": std::env::var("ASTRAL_TEST_PASSWORD").unwrap(), "sslMode": std::env::var("ASTRAL_TEST_SSL_MODE").unwrap_or_else(|_| "disable".into())
     }))
     .unwrap();
     let state = DatabaseState::default();

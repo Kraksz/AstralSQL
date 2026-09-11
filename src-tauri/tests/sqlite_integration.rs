@@ -22,6 +22,41 @@ async fn memory() -> DatabasePool {
 }
 
 #[tokio::test]
+async fn file_database_persists_after_disconnect_and_reopen() {
+    let directory = tempfile::tempdir().unwrap();
+    let file = directory.path().join("Astral persistence.db");
+    std::fs::File::create(&file).unwrap();
+    let settings = config(file.to_str().unwrap());
+    let pool = DatabasePool::Sqlite(sqlite::connect(&settings).await.unwrap());
+    pool.execute(
+        "CREATE TABLE saved(id INTEGER PRIMARY KEY, note TEXT)",
+        10,
+        CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    pool.execute(
+        "INSERT INTO saved VALUES(1, 'Здравей 🌌')",
+        10,
+        CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    pool.close().await;
+    let reopened = DatabasePool::Sqlite(sqlite::connect(&settings).await.unwrap());
+    let result = reopened
+        .execute(
+            "SELECT note FROM saved WHERE id=1",
+            10,
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(result.rows[0][0], json!("Здравей 🌌"));
+    reopened.close().await;
+}
+
+#[tokio::test]
 async fn sql_script_import_handles_transactions_and_trigger_bodies() {
     let pool = memory().await;
     astral_sql::db::script::execute(&pool, "BEGIN; CREATE TABLE imported(id INT, note TEXT); CREATE TABLE audit(id INT); CREATE TRIGGER tr AFTER INSERT ON imported BEGIN INSERT INTO audit VALUES(new.id); END; INSERT INTO imported VALUES(1, 'hello; world'),(2, '🌌'); COMMIT;", CancellationToken::new()).await.unwrap();
