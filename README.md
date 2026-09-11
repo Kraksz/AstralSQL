@@ -47,8 +47,8 @@ For remote servers and existing phpMyAdmin-managed databases, see [connection se
 - Exact 64-bit integers represented as strings when outside JavaScript's safe range.
 - Per-tab/per-connection query results, saved queries, and the last 100 executed queries.
 - Native SQLite file chooser; browser SQLite import, IndexedDB persistence, database backups, and cancellation.
-- Mouse-responsive sky-blue ribbons with visible drift, pointer bending, a pause control, and explicit opt-in when the system prefers reduced motion.
-- Sky-only WebGL rendering, lazy Three.js, reduced-motion handling, hidden/offscreen suspension, bounded pixel resolution, and GPU cleanup.
+- Always-on sky-blue ribbons with visible drift and mouse-coordinate bending.
+- Sky-only WebGL rendering, lazy Three.js, hidden/offscreen suspension, bounded pixel resolution, and GPU cleanup.
 
 ## Query and storage behavior
 
