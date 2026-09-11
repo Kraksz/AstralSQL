@@ -114,11 +114,12 @@ fn decode_row(row: &MySqlRow) -> DbResult<Vec<Value>> {
 }
 
 pub async fn schema(pool: &MySqlPool) -> DbResult<Vec<TableSchema>> {
-    let database: String = sqlx::query_scalar("SELECT DATABASE()")
-        .fetch_one(pool)
-        .await
-        .map_err(|e| e.to_string())?;
-    let tables = sqlx::query("SELECT TABLE_NAME AS table_name FROM information_schema.TABLES WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME LIMIT 1001")
+    let database: String =
+        sqlx::query_scalar("SELECT CAST(DATABASE() AS CHAR CHARACTER SET utf8mb4)")
+            .fetch_one(pool)
+            .await
+            .map_err(|e| e.to_string())?;
+    let tables = sqlx::query("SELECT CAST(TABLE_NAME AS CHAR CHARACTER SET utf8mb4) AS table_name FROM information_schema.TABLES WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME LIMIT 1001")
         .bind(&database).fetch_all(pool).await.map_err(|e| e.to_string())?;
     if tables.len() > 1000 {
         return Err("Schema contains more than 1,000 tables. Narrow the database permissions before inspection.".into());
@@ -126,8 +127,9 @@ pub async fn schema(pool: &MySqlPool) -> DbResult<Vec<TableSchema>> {
     let mut result = Vec::with_capacity(tables.len());
     for table in tables {
         let name: String = table.try_get("table_name").map_err(|e| e.to_string())?;
-        // MySQL 8 exposes COLUMN_TYPE as binary metadata; explicitly request UTF-8 text.
-        let columns = sqlx::query("SELECT COLUMN_NAME AS column_name, CAST(COLUMN_TYPE AS CHAR CHARACTER SET utf8mb4) AS data_type, CAST(IS_NULLABLE AS CHAR CHARACTER SET utf8mb4) AS is_nullable, CAST(COLUMN_KEY AS CHAR CHARACTER SET utf8mb4) AS column_key FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY ORDINAL_POSITION")
+        // MySQL 8 can expose schema identifiers and attributes as binary metadata.
+        // Request UTF-8 for every textual projection, including on case-sensitive Linux hosts.
+        let columns = sqlx::query("SELECT CAST(COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS column_name, CAST(COLUMN_TYPE AS CHAR CHARACTER SET utf8mb4) AS data_type, CAST(IS_NULLABLE AS CHAR CHARACTER SET utf8mb4) AS is_nullable, CAST(COLUMN_KEY AS CHAR CHARACTER SET utf8mb4) AS column_key FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY ORDINAL_POSITION")
             .bind(&database).bind(&name).fetch_all(pool).await.map_err(|e| e.to_string())?;
         let columns = columns
             .iter()
@@ -141,7 +143,7 @@ pub async fn schema(pool: &MySqlPool) -> DbResult<Vec<TableSchema>> {
             })
             .collect::<Result<_, sqlx::Error>>()
             .map_err(|e| e.to_string())?;
-        let keys = sqlx::query("SELECT COLUMN_NAME AS column_name, REFERENCED_TABLE_SCHEMA AS referenced_schema, REFERENCED_TABLE_NAME AS referenced_table, REFERENCED_COLUMN_NAME AS referenced_column FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION")
+        let keys = sqlx::query("SELECT CAST(COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS column_name, CAST(REFERENCED_TABLE_SCHEMA AS CHAR CHARACTER SET utf8mb4) AS referenced_schema, CAST(REFERENCED_TABLE_NAME AS CHAR CHARACTER SET utf8mb4) AS referenced_table, CAST(REFERENCED_COLUMN_NAME AS CHAR CHARACTER SET utf8mb4) AS referenced_column FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION")
             .bind(&database).bind(&name).fetch_all(pool).await.map_err(|e| e.to_string())?;
         let foreign_keys = keys
             .iter()
