@@ -1419,7 +1419,7 @@ export default function App() {
           <ShieldCheck size={12} />
           {desktop ? "Native Rust runtime" : "Local SQLite · Browser preview"}
           <span className="statusbar-divider" />
-          <span>v0.1.6</span>
+          <span>v0.1.7</span>
           <Sparkles size={12} />
         </div>
       </footer>

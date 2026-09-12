@@ -141,77 +141,123 @@ pub async fn schema(pool: &PgPool) -> DbResult<Vec<TableSchema>> {
         return Err("Schema contains more than 1,000 tables. Narrow the database permissions before inspection.".into());
     }
     let mut result = Vec::with_capacity(tables.len());
+    let mut index = std::collections::HashMap::with_capacity(tables.len());
     for table in tables {
         let namespace: String = table.try_get("table_schema").map_err(|e| e.to_string())?;
         let name: String = table.try_get("table_name").map_err(|e| e.to_string())?;
-        let columns = sqlx::query(r#"
-            SELECT c.column_name, c.data_type, c.is_nullable,
-              EXISTS (SELECT 1 FROM information_schema.table_constraints tc
-                JOIN information_schema.key_column_usage kcu ON kcu.constraint_catalog=tc.constraint_catalog
-                  AND kcu.constraint_schema=tc.constraint_schema AND kcu.constraint_name=tc.constraint_name
-                  AND kcu.table_schema=tc.table_schema AND kcu.table_name=tc.table_name
-                WHERE tc.constraint_type='PRIMARY KEY' AND tc.table_schema=c.table_schema
-                  AND tc.table_name=c.table_name AND kcu.column_name=c.column_name) AS is_primary
-            FROM information_schema.columns c WHERE c.table_schema=$1 AND c.table_name=$2
-            ORDER BY c.ordinal_position
-        "#).bind(&namespace).bind(&name).fetch_all(pool).await.map_err(|e| e.to_string())?;
-        let columns = columns
-            .iter()
-            .map(|row| {
-                Ok(SchemaColumn {
-                    name: row.try_get("column_name")?,
-                    data_type: row.try_get("data_type")?,
-                    nullable: row.try_get::<String, _>("is_nullable")? == "YES",
-                    primary_key: row.try_get("is_primary")?,
-                })
-            })
-            .collect::<Result<_, sqlx::Error>>()
-            .map_err(|e| e.to_string())?;
-        let keys = sqlx::query(
-            r#"
-            SELECT src.attname AS column_name, target.relname AS referenced_table,
-                target_ns.nspname AS referenced_schema, dst.attname AS referenced_column
-            FROM pg_catalog.pg_constraint con
-            JOIN pg_catalog.pg_class source ON source.oid=con.conrelid
-            JOIN pg_catalog.pg_namespace source_ns ON source_ns.oid=source.relnamespace
-            JOIN pg_catalog.pg_class target ON target.oid=con.confrelid
-            JOIN pg_catalog.pg_namespace target_ns ON target_ns.oid=target.relnamespace
-            JOIN LATERAL unnest(con.conkey) WITH ORDINALITY a(attnum, pos) ON true
-            JOIN LATERAL unnest(con.confkey) WITH ORDINALITY b(attnum, pos) ON a.pos=b.pos
-            JOIN pg_catalog.pg_attribute src ON src.attrelid=source.oid AND src.attnum=a.attnum
-            JOIN pg_catalog.pg_attribute dst ON dst.attrelid=target.oid AND dst.attnum=b.attnum
-            WHERE con.contype='f' AND source_ns.nspname=$1 AND source.relname=$2
-            ORDER BY con.conname, a.pos
-        "#,
-        )
-        .bind(&namespace)
-        .bind(&name)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| e.to_string())?;
-        let foreign_keys = keys
-            .iter()
-            .map(|row| {
-                let target_schema: String = row.try_get("referenced_schema")?;
-                let target: String = row.try_get("referenced_table")?;
-                Ok(ForeignKey {
-                    column: row.try_get("column_name")?,
-                    referenced_table: if target_schema == namespace {
-                        target
-                    } else {
-                        format!("{target_schema}.{target}")
-                    },
-                    referenced_column: row.try_get("referenced_column")?,
-                })
-            })
-            .collect::<Result<_, sqlx::Error>>()
-            .map_err(|e| e.to_string())?;
+        index.insert((namespace.clone(), name.clone()), result.len());
         result.push(TableSchema {
             name,
             schema: Some(namespace),
-            columns,
-            foreign_keys,
+            columns: Vec::new(),
+            foreign_keys: Vec::new(),
         });
+    }
+    // Fetch columns and keys for the whole database at once, not per table: remote
+    // servers with hundreds of tables otherwise exceed the timeout on round trips alone.
+    let primary = sqlx::query(
+        r#"
+        SELECT source_ns.nspname AS table_schema, source.relname AS table_name,
+            att.attname AS column_name
+        FROM pg_catalog.pg_constraint con
+        JOIN pg_catalog.pg_class source ON source.oid=con.conrelid
+        JOIN pg_catalog.pg_namespace source_ns ON source_ns.oid=source.relnamespace
+        JOIN LATERAL unnest(con.conkey) AS pk(attnum) ON true
+        JOIN pg_catalog.pg_attribute att ON att.attrelid=source.oid AND att.attnum=pk.attnum
+        WHERE con.contype='p' AND source_ns.nspname NOT IN ('pg_catalog', 'information_schema')
+    "#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    let decode_key = |row: &PgRow| -> Result<(String, String, String), sqlx::Error> {
+        Ok((
+            row.try_get("table_schema")?,
+            row.try_get("table_name")?,
+            row.try_get("column_name")?,
+        ))
+    };
+    let mut primary_keys = std::collections::HashSet::with_capacity(primary.len());
+    for row in &primary {
+        primary_keys.insert(decode_key(row).map_err(|e| e.to_string())?);
+    }
+    let columns = sqlx::query(
+        r#"
+        SELECT c.table_schema, c.table_name, c.column_name, c.data_type, c.is_nullable
+        FROM information_schema.columns c
+        WHERE c.table_schema NOT IN ('pg_catalog', 'information_schema')
+        ORDER BY c.table_schema, c.table_name, c.ordinal_position
+    "#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    let decode_column = |row: &PgRow| -> Result<((String, String), SchemaColumn), sqlx::Error> {
+        let namespace: String = row.try_get("table_schema")?;
+        let table: String = row.try_get("table_name")?;
+        let name: String = row.try_get("column_name")?;
+        Ok((
+            (namespace, table),
+            SchemaColumn {
+                data_type: row.try_get("data_type")?,
+                nullable: row.try_get::<String, _>("is_nullable")? == "YES",
+                primary_key: false,
+                name,
+            },
+        ))
+    };
+    for row in &columns {
+        let (table, mut column) = decode_column(row).map_err(|e| e.to_string())?;
+        // A table created after the table listing is skipped until the next refresh.
+        if let Some(&position) = index.get(&table) {
+            column.primary_key = primary_keys.contains(&(table.0, table.1, column.name.clone()));
+            result[position].columns.push(column);
+        }
+    }
+    let keys = sqlx::query(
+        r#"
+        SELECT source_ns.nspname AS table_schema, source.relname AS table_name,
+            src.attname AS column_name, target.relname AS referenced_table,
+            target_ns.nspname AS referenced_schema, dst.attname AS referenced_column
+        FROM pg_catalog.pg_constraint con
+        JOIN pg_catalog.pg_class source ON source.oid=con.conrelid
+        JOIN pg_catalog.pg_namespace source_ns ON source_ns.oid=source.relnamespace
+        JOIN pg_catalog.pg_class target ON target.oid=con.confrelid
+        JOIN pg_catalog.pg_namespace target_ns ON target_ns.oid=target.relnamespace
+        JOIN LATERAL unnest(con.conkey) WITH ORDINALITY a(attnum, pos) ON true
+        JOIN LATERAL unnest(con.confkey) WITH ORDINALITY b(attnum, pos) ON a.pos=b.pos
+        JOIN pg_catalog.pg_attribute src ON src.attrelid=source.oid AND src.attnum=a.attnum
+        JOIN pg_catalog.pg_attribute dst ON dst.attrelid=target.oid AND dst.attnum=b.attnum
+        WHERE con.contype='f' AND source_ns.nspname NOT IN ('pg_catalog', 'information_schema')
+        ORDER BY source_ns.nspname, source.relname, con.conname, a.pos
+    "#,
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    let decode_foreign = |row: &PgRow| -> Result<((String, String), ForeignKey), sqlx::Error> {
+        let namespace: String = row.try_get("table_schema")?;
+        let table: String = row.try_get("table_name")?;
+        let target_schema: String = row.try_get("referenced_schema")?;
+        let target: String = row.try_get("referenced_table")?;
+        Ok((
+            (namespace.clone(), table),
+            ForeignKey {
+                column: row.try_get("column_name")?,
+                referenced_table: if target_schema == namespace {
+                    target
+                } else {
+                    format!("{target_schema}.{target}")
+                },
+                referenced_column: row.try_get("referenced_column")?,
+            },
+        ))
+    };
+    for row in &keys {
+        let (table, key) = decode_foreign(row).map_err(|e| e.to_string())?;
+        if let Some(&position) = index.get(&table) {
+            result[position].foreign_keys.push(key);
+        }
     }
     Ok(result)
 }

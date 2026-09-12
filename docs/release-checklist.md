@@ -1,4 +1,4 @@
-# Release verification — 0.1.6 beta
+# Release verification — 0.1.7 beta
 
 This document records checks for the source package. It is not a claim that every
 server, operating system, or SQL dialect has been validated.
@@ -59,3 +59,10 @@ Publish a clearly labelled beta until the stable-release gates are completed.
 - New: drop one table or all tables, whole-database `.sql` export and import for MySQL/MariaDB, and deleting a result row by its primary key.
 - Checks on September 12, 2026: 25 native tests (including dump statement splitting, literal encoding and generated-column detection) and 64 frontend tests passed; TypeScript, frontend, and Windows NSIS/MSI release builds succeeded.
 - Export, import and row delete have not yet been verified against a live MySQL/MariaDB server or in the installed app. Test them on a copy of the data first.
+
+## 0.1.7 PostgreSQL schema verification
+
+- PostgreSQL schema inspection now loads tables, columns, primary keys and foreign keys in four queries for the whole database instead of two queries per table, matching the MySQL/MariaDB change in 0.1.6.
+- The per-column `EXISTS` primary-key subquery was replaced with a single `pg_constraint` query, so wide schemas no longer pay for it per column.
+- Checks on September 12, 2026: 25 native tests and 64 frontend tests passed; TypeScript, frontend, and Windows release builds succeeded.
+- The new PostgreSQL queries were not run against a live server on the release machine. The disposable database workflow exercises PostgreSQL 17.11 on each push.
